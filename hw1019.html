@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+	body{
+		overflow:hidden;
+	}
+
+</style>
+</head>
+<body> 
+
+
+<script src="https://threejs.org/build/three.min.js"></script>
+<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+<script src="https://raw.githack.com/mrdoob/three.js/dev/examples/js/misc/Gyroscope.js"></script>
+<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+
+<script>
+
+var renderer,camera,scene,Minecraft,mesh;
+init();
+animate();
+var angle = 0;
+var gyro ;
+
+function init(){
+
+	renderer = new THREE.WebGLRenderer();
+	renderer.setSize (window.innerWidth,window.innerHeight);
+	renderer.setClearColor(0x7a97af);
+	document.body.appendChild(renderer.domElement);
+	
+	scene = new THREE.Scene();
+	var grid = new THREE.GridHelper(100,10,'red','white');
+	scene.add(grid);
+	
+	camera = new THREE.PerspectiveCamera(50,window.innerWidth/window.innerHeight,1,1000);
+	camera.position.z = 50
+	//camera.lookAt (new THREE.Vector3(0,0,0));
+	var controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+	
+
+//---------CAR---------->
+	var material = new THREE.MeshNormalMaterial();
+
+	var geometry = new THREE.BoxGeometry(15,1.5,10);
+	var box1 = new THREE.Mesh(geometry,material);
+	box1.position.set(0,8,0);
+
+	var geometry3 = new THREE.BoxGeometry(4,8,10);
+	var box2 = new THREE.Mesh(geometry3,material);
+	box2.position.set(5.5,4,0);
+
+	var geometry4 = new THREE.BoxGeometry(4,8,10);
+	var box3 = new THREE.Mesh(geometry4,material);
+	box3.position.set(-5.5,4,0);
+
+	var geometry1 = new THREE.CylinderGeometry(5,5,4,64);
+	var cylinder1 = new THREE.Mesh(geometry1,material);
+	cylinder1.position.set(9.5,5,0);
+	cylinder1.rotation.z=Math.PI/2;
+
+	var geometry2 = new THREE.CylinderGeometry(5,5,4,64);
+	var cylinder2 = new THREE.Mesh(geometry2,material);
+	cylinder2.position.set(-9.5,5,0);
+	cylinder2.rotation.z=Math.PI/2;
+
+	var car = new THREE.Object3D();
+	car.add(box1,box2,box3,cylinder1,cylinder2);
+
+	//----------Person-------
+
+	var body = new THREE.BoxGeometry(9,13.5,5);
+	var part = new THREE.Mesh(body,material);
+	part.position.set(0,29,0);
+
+	var feet = new THREE.BoxGeometry(4.5,13.5,5);
+	var part1 = new THREE.Mesh(feet,material);
+	part1.position.set(-2.25,15.5,0);
+
+	var feet1 = new THREE.BoxGeometry(4.5,13.5,5);
+	var part2 = new THREE.Mesh(feet1,material);
+	part2.position.set(2.25,15.5,0);
+
+	var hand = new THREE.BoxGeometry(4.5,9,5);
+	var part3 = new THREE.Mesh(hand,material);
+	part3.position.set(-6.75,26.75,0);
+
+	var hand1 = new THREE.BoxGeometry(4.5,9,5);
+	var part4 = new THREE.Mesh(hand1,material);
+	part4.position.set(6.75,26.75,0);
+
+	var shoulder = new THREE.BoxGeometry(4.5,4.5,5);
+	var part5 = new THREE.Mesh(shoulder,material);
+	part5.position.set(-6.75,33.5,0);
+
+	var shoulder1 = new THREE.BoxGeometry(4.5,4.5,5);
+	var part6 = new THREE.Mesh(shoulder1,material);
+	part6.position.set(6.75,33.5,0);
+
+	var geometry12 = new THREE.BoxGeometry(9,9,6);
+	var part7 = new THREE.Mesh(geometry12,material);
+	part7.position.set(0,40.25,0);
+	 
+	var person = new THREE.Object3D();
+	person.add(part,part1,part2,part3,part4,part5,part6,part7);
+
+	var Minecraft = new THREE.Object3D();
+	Minecraft.add(person,car);
+	scene.add(Minecraft);
+
+	var geometry = new THREE.BoxGeometry(0,0,0);
+	var material = new THREE.MeshNormalMaterial();
+	mesh = new THREE.Mesh(geometry, material);
+	mesh.add(Minecraft);
+	scene.add(mesh);
+	 
+	gyro = new THREE.Gyroscope();
+	scene.add (gyro);
+	gyro.add (camera);
+	mesh.add (gyro);
+
+}
+
+function animate(){
+
+	angle += 0.01;
+	mesh.position.set(50*Math.sin(angle), 0, 50*Math.cos(angle));
+	
+	mesh.rotation.y = Math.sin(angle);
+	
+	requestAnimationFrame(animate);
+	renderer.render(scene,camera);
+
+}
+
+</script>
+</body>
+</html>

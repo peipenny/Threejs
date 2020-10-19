@@ -11,6 +11,7 @@
 <script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
 
 <script>
+javascript:(function(){var script=document.createElement('script');script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src='https://mrdoob.github.io/stats.js/build/stats.min.js';document.head.appendChild(script);})()
 
 var renderer,camera,scene;
 init();
@@ -52,9 +53,8 @@ var box3 = new THREE.Mesh(geometry3,material);
 box3.position.set(20,5,-5);
 
 var polygon = new THREE.Object3D();
-polygon.add(box1);
-polygon.add(box2);
-polygon.add(box3);
+polygon.add(box1,box2,box3);
+
 
 scene.add(polygon);
 
