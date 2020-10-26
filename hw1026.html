@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+</style>
+</head>
+<body> 
+
+<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+<script src="https://threejs.org/build/three.min.js"></script>
+<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+
+<script>
+
+var renderer,camera,scene,car;
+
+init();
+animate();
+
+function init(){
+	renderer = new THREE.WebGLRenderer({antialias:true});
+	renderer.setSize (window.innerWidth,window.innerHeight);
+	renderer.setClearColor(0x888888);
+	document.body.appendChild(renderer.domElement);
+	
+	camera = new THREE.PerspectiveCamera(50,window.innerWidth/window.innerHeight,1,1000);
+	camera.position.z = 50; // (0,0,50)
+
+	var controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+	scene = new THREE.Scene();
+	var grid = new THREE.GridHelper(100,10,'red','white');
+	scene.add(grid);
+	
+		///------light
+	pointLight = new THREE.PointLight(0x404040,20,300);
+	pointLight.position.set(100,50,100);
+	scene.add(pointLight);
+	
+	object();
+}
+
+function object(){
+	//------------- car body
+	var geometry1 = new THREE.BoxGeometry(6,4,4);
+	var material = new THREE.MeshPhongMaterial({ color: 0xffffff});
+	var body = new THREE.Mesh(geometry1,material);
+	body.position.set(-3,2.6,2);
+	//------------- car head 
+	var shape = new THREE.Shape();
+	shape.moveTo( 0,0 );
+	shape.lineTo( 0,3.2 );
+	shape.lineTo( 1.4, 3.2 );
+	shape.lineTo( 1.55,2);
+	shape.lineTo( 2.5,1.75);
+	shape.lineTo( 2.5, 0 );
+
+	var extrudeSettings = {
+		steps: 4,
+		depth: 2,
+		bevelEnabled: true,
+		bevelThickness: 1,
+		bevelSize: 0,
+		bevelOffset: 0,
+		bevelSegments: 1
+	};
+
+	var geometry2 = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+	var material2 = new THREE.MeshPhongMaterial({ color: 0x2132ce});
+	var head = new THREE.Mesh(geometry2,material2);
+	head.position.set(0,0.6,1);
+
+	var geometry3 = new THREE.CylinderGeometry(0.75,0.75,1,64);
+	var material3 = new THREE.MeshPhongMaterial({ color: 0x000000});
+	var tire1 = new THREE.Mesh(geometry3,material3);
+	tire1.rotation.x=Math.PI/2;
+	tire1.position.set(-4.5,0.5,3.51);
+
+	var geometry4 = new THREE.CylinderGeometry(0.75,0.75,1,64);
+	var material4 = new THREE.MeshPhongMaterial({ color: 0x000000});
+	var tire2 = new THREE.Mesh(geometry4,material4);
+	tire2.rotation.x=Math.PI/2;
+	tire2.position.set(-4.5,0.5,0.45);
+
+	var geometry5 = new THREE.CylinderGeometry(0.75,0.75,1,64);
+	var material5 = new THREE.MeshPhongMaterial({ color: 0x000000});
+	var tire3 = new THREE.Mesh(geometry5,material5);
+	tire3.rotation.x=Math.PI/2;
+	tire3.position.set(1,0.5,0.45);
+
+	var geometry6 = new THREE.CylinderGeometry(0.75,0.75,1,64);
+	var material6 = new THREE.MeshPhongMaterial({ color: 0x000000});
+	var tire4 = new THREE.Mesh(geometry6,material6);
+	tire4.rotation.x=Math.PI/2;
+	tire4.position.set(1,0.5,3.51);
+
+	var car = new THREE.Object3D();
+	car.add(tire1,tire2,tire3,tire4,body,head);
+	
+	scene.add(car);
+
+	car.position.set(-50,0,-50);
+}
+
+var angle = 0;
+var status = 0;
+
+function animate(){
+	//car.position.set(50,0,-50);
+	/*
+	if(status == 0) {
+		angle = 0;
+		car.position.set(car.position.x + 1, 0, car.position.z);
+		 if (car.position.x > 50) {
+			status = 1;
+		 }
+		car.rotation.y = angle;
+	 }
+	 
+	else if(status == 1) {
+	  angle = Math.PI*1.5;
+	  car.position.set (car.position.x, 0, car.position.z + 1);
+	  if (car.position.z > 50) {
+	   status = 2;
+	  }
+	 car.rotation.y = angle;
+	 }
+	else if (status == 2) {
+	  angle = Math.PI;
+	  car.position.set (car.position.x -1, 0, car.position.z);
+	  if (car.position.x < -50) {
+	   status = 3;
+	  }
+		car.rotation.y = angle;
+	 }
+	 else if (status == 3) {
+	  angle = Math.PI/2;
+	  car.position.set (car.position.x, 0, car.position.z - 1);
+	  if (car.position.z < -50) {
+	   status = 0;
+	  }
+	  car.rotation.y = angle;
+	}
+	*/
+	renderer.render(scene,camera);
+	requestAnimationFrame(animate);
+}
+
+	
+
+
+</script>
+</body>
+</html>
