@@ -94,7 +94,7 @@ function object(){
 	tire4.rotation.x=Math.PI/2;
 	tire4.position.set(1,0.5,3.51);
 
-	var car = new THREE.Object3D();
+	car = new THREE.Object3D();
 	car.add(tire1,tire2,tire3,tire4,body,head);
 	
 	scene.add(car);
@@ -107,7 +107,7 @@ var status = 0;
 
 function animate(){
 	//car.position.set(50,0,-50);
-	/*
+	
 	if(status == 0) {
 		angle = 0;
 		car.position.set(car.position.x + 1, 0, car.position.z);
@@ -141,7 +141,7 @@ function animate(){
 	  }
 	  car.rotation.y = angle;
 	}
-	*/
+	
 	renderer.render(scene,camera);
 	requestAnimationFrame(animate);
 }
