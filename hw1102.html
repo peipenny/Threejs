@@ -13,6 +13,19 @@
 <script>
 
 var renderer,camera,scene,car;
+var puck;
+
+var raycaster;
+var mouse = new THREE.Vector2();
+var pickables = [];
+var objects ;
+var count=0 ;
+var record=[];
+var i =0;
+var a = new THREE.Vector3();
+var b = new THREE.Vector3();
+var c = new THREE.Vector3();
+var d = new THREE.Vector3();
 
 init();
 animate();
@@ -38,6 +51,52 @@ function init(){
 	scene.add(pointLight);
 	
 	object();
+	
+
+	//------------- touch
+	
+	objects = new THREE.Group();
+
+	plane = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), new THREE.MeshBasicMaterial({
+    transparent: true,
+    opacity: 0.5,
+    visible: true
+	}));
+
+	 scene.add(plane);
+	 plane.rotation.x = -Math.PI / 2;
+	 pickables = [plane];
+	 
+	 raycaster = new THREE.Raycaster();
+	 document.addEventListener('pointerdown', onDocumentMouseDown, false);
+	 //---------
+	 
+	 
+}
+
+function onDocumentMouseDown(event) {
+	  event.preventDefault();
+	  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+	  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+	  // find intersections
+	  raycaster.setFromCamera(mouse, camera);
+	  var intersects = raycaster.intersectObjects(pickables);
+	  if (intersects.length > 0) {
+		if(count!=4){
+			count += 1;
+			puck = new THREE.Mesh(new THREE.CylinderGeometry(5, 5, 2, 20), new THREE.MeshNormalMaterial());
+			objects.add(puck);
+			scene.add(puck);
+			puck.position.copy(intersects[0].point);
+			
+			record[i++] = intersects[0].point;
+			if(i==4){
+				car.position.copy(intersects[0].point);
+				a = record[0]; b=record[1]; c=record[2]; d=record[3];
+			}
+		}
+	 }
 }
 
 function object(){
@@ -76,79 +135,40 @@ function object(){
 	tire1.rotation.x=Math.PI/2;
 	tire1.position.set(-4.5,0.5,3.51);
 
-	var geometry4 = new THREE.CylinderGeometry(0.75,0.75,1,64);
-	var material4 = new THREE.MeshPhongMaterial({ color: 0x000000});
-	var tire2 = new THREE.Mesh(geometry4,material4);
-	tire2.rotation.x=Math.PI/2;
+	var tire2 = tire1.clone();
 	tire2.position.set(-4.5,0.5,0.45);
-
-	var geometry5 = new THREE.CylinderGeometry(0.75,0.75,1,64);
-	var material5 = new THREE.MeshPhongMaterial({ color: 0x000000});
-	var tire3 = new THREE.Mesh(geometry5,material5);
-	tire3.rotation.x=Math.PI/2;
+	var tire3 = tire1.clone();
 	tire3.position.set(1,0.5,0.45);
-
-	//var geometry6 = new THREE.CylinderGeometry(0.75,0.75,1,64);
-	//var material6 = new THREE.MeshPhongMaterial({ color: 0x000000});
-	var tire4 = tire3.clone();
-	tire4.rotation.x=Math.PI/2;
+	var tire4 = tire1.clone();
 	tire4.position.set(1,0.5,3.51);
-
+	
 	car = new THREE.Object3D();
 	car.add(tire1,tire2,tire3,tire4,body,head);
-	
-	scene.add(car);
 
+	scene.add(car);
 	car.position.set(-50,0,-50);
 }
 
 var angle = 0;
-var status = 0;
+var status = 3;
 
 function animate(){
-	//car.position.set(50,0,-50);
-	
-	if(status == 0) {
-		angle = 0;
-		car.position.set(car.position.x + 1, 0, car.position.z);
-		 if (car.position.x > 50) {
-			status = 1;
+
+	if(status == 3) {
+
+		car.position.set(car.position.x + (c.x-d.x)/50, 0, car.position.z + (c.z-d.z)/50);
+		 if (car.position.x == c.x || car.position.z ==c.z) {
+			status = 2;
 		 }
-		car.rotation.y = angle;
-	 }
-	 
-	else if(status == 1) {
-	  angle = Math.PI*1.5;
-	  car.position.set (car.position.x, 0, car.position.z + 1);
-	  if (car.position.z > 50) {
-	   status = 2;
-	  }
-	 car.rotation.y = angle;
-	 }
-	else if (status == 2) {
-	  angle = Math.PI;
-	  car.position.set (car.position.x -1, 0, car.position.z);
-	  if (car.position.x < -50) {
-	   status = 3;
-	  }
-		car.rotation.y = angle;
-	 }
-	 else if (status == 3) {
-	  angle = Math.PI/2;
-	  car.position.set (car.position.x, 0, car.position.z - 1);
-	  if (car.position.z < -50) {
-	   status = 0;
-	  }
-	  car.rotation.y = angle;
 	}
 	
 	renderer.render(scene,camera);
 	requestAnimationFrame(animate);
 }
-
 	
 
 
 </script>
 </body>
 </html>
+
