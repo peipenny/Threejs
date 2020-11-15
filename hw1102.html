@@ -13,19 +13,10 @@
 <script>
 
 var renderer,camera,scene,car;
-var puck;
+//var angle = 0;
 
-var raycaster;
-var mouse = new THREE.Vector2();
-var pickables = [];
-var objects ;
-var count=0 ;
-var record=[];
-var i =0;
-var a = new THREE.Vector3();
-var b = new THREE.Vector3();
-var c = new THREE.Vector3();
-var d = new THREE.Vector3();
+var steps,numStep,moveTo,theta1,theta2;
+var p,v,dq,front,now,next,ds;
 
 init();
 animate();
@@ -49,54 +40,117 @@ function init(){
 	pointLight = new THREE.PointLight(0x404040,20,300);
 	pointLight.position.set(100,50,100);
 	scene.add(pointLight);
-	
+
 	object();
+	//-------------
+		
+	p = [			
+		new THREE.Vector3(40,0,-40),
+		new THREE.Vector3(-40,0,-40),
+		new THREE.Vector3(-40,0,40),
+		new THREE.Vector3(40,0,40),	
+						
+	];	//點的座標
+	var point = [
+		new THREE.Mesh(new THREE.CircleGeometry(10,20),new THREE.MeshBasicMaterial({color:'white'})),
+		new THREE.Mesh(new THREE.CircleGeometry(10,20),new THREE.MeshBasicMaterial({color:'white'})),
+		new THREE.Mesh(new THREE.CircleGeometry(10,20),new THREE.MeshBasicMaterial({color:'white'})),
+		new THREE.Mesh(new THREE.CircleGeometry(10,20),new THREE.MeshBasicMaterial({color:'white'})),
+	];	//建立點的圖形
 	
-
-	//------------- touch
+	for(let i=0;i<4;i++){
+		point[i].rotation.x = -Math.PI/2;
+		point[i].position.copy(p[i]);
+		scene.add(point[i]);
+	}	//把點的圖形做修正跟加入
 	
-	objects = new THREE.Group();
-
-	plane = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), new THREE.MeshBasicMaterial({
-    transparent: true,
-    opacity: 0.5,
-    visible: true
-	}));
-
-	 scene.add(plane);
-	 plane.rotation.x = -Math.PI / 2;
-	 pickables = [plane];
-	 
-	 raycaster = new THREE.Raycaster();
-	 document.addEventListener('pointerdown', onDocumentMouseDown, false);
-	 //---------
-	 
-	 
+	front = p.length - 1;
+	now = 0;
+	next = 1;
+	isWalking = true;
+	walkingInit();
 }
 
-function onDocumentMouseDown(event) {
-	  event.preventDefault();
-	  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-	  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+function walkingInit(){
+	v = p[next].clone().sub(p[now]);   //v = p[next]-p[now]
+	ds = 0.51;							//走的速度
+	steps = Math.floor(v.length()/ds);	//	floor為四捨五入 
+	moveTo = p[now].clone();
+	stepNum = 0 ;
+}
 
-	  // find intersections
-	  raycaster.setFromCamera(mouse, camera);
-	  var intersects = raycaster.intersectObjects(pickables);
-	  if (intersects.length > 0) {
-		if(count!=4){
-			count += 1;
-			puck = new THREE.Mesh(new THREE.CylinderGeometry(5, 5, 2, 20), new THREE.MeshNormalMaterial());
-			objects.add(puck);
-			scene.add(puck);
-			puck.position.copy(intersects[0].point);
-			
-			record[i++] = intersects[0].point;
-			if(i==4){
-				car.position.copy(intersects[0].point);
-				a = record[0]; b=record[1]; c=record[2]; d=record[3];
-			}
+
+function walking(){
+	moveTo = moveTo.clone().add(v.clone().setLength(ds)); //將此向量設置為與該向量具有相同方向但長度為l的向量。
+	stepNum++;
+	if(stepNum > steps){		//如果走的步數已經超過應該走的步數
+		car.position.copy(p[next]);
+		front++;
+		now++;
+		next++;
+		front %= p.length;
+		now %= p.length;
+		next %= p.length;
+		rotatingInit();
+		isWalking=false;
+	}
+	else car.position.copy(moveTo);
+}
+
+function rotatingInit(){
+
+	var p12 = p[now].clone().sub(p[front]);	 	//現在的角度-之前的角度
+	theta1 = Math.atan2(p12.x,p12.z)+Math.PI*1.5;
+	//car.position.copy(p[now]);
+	car.rotation.y = theta1;   
+	
+	var p23 = p[next].clone().sub(p[now]); 		//下一個角度-現在的角度
+	theta2 = Math.atan2(p23.x,p23.z)+Math.PI*1.5;
+	
+	dq = 0.05;					//轉的速度
+	
+	if (theta2 < 0) { 		// 異號
+		theta2 += Math.PI * 2;
+	 }
+	  
+	if (theta1 <  0) { // 異號
+		theta1 += Math.PI * 2;
+	}
+	  
+	if(theta1 > theta2){
+		if(theta1 - Math.PI > theta2){
+			steps = Math.floor ((Math.PI * 2 - (theta1-theta2))/dq);
+		}
+		else {
+			steps = Math.floor ((theta1-theta2)/dq);
+			dq = -dq;
+		}
+	}
+	else {
+		if(theta2 - Math.PI > theta1){
+			steps = Math.floor ((Math.PI * 2 - (theta2-theta1))/dq);
+			dq = -dq;
+		}
+		else {
+			steps = Math.floor ((theta2-theta1)/dq);
 		}
 	 }
+	//debugger 
+	numStep = 0;
+	moveTo = theta1 ; // theta1
+}
+
+function rotating(){
+	if(numStep > steps){
+		car.rotation.y = theta2; //theta2
+		walkingInit();
+		isWalking=true;
+	}
+	else{
+		car.rotation.y = moveTo; //moveTo
+		moveTo +=dq;
+		++numStep;
+	}
 }
 
 function object(){
@@ -146,29 +200,19 @@ function object(){
 	car.add(tire1,tire2,tire3,tire4,body,head);
 
 	scene.add(car);
-	car.position.set(-50,0,-50);
+	car.rotation.y=Math.PI;
 }
 
-var angle = 0;
-var status = 3;
 
 function animate(){
-
-	if(status == 3) {
-
-		car.position.set(car.position.x + (c.x-d.x)/50, 0, car.position.z + (c.z-d.z)/50);
-		 if (car.position.x == c.x || car.position.z ==c.z) {
-			status = 2;
-		 }
-	}
-	
+	if(isWalking)walking();
+	else rotating();
 	renderer.render(scene,camera);
 	requestAnimationFrame(animate);
 }
-	
+
 
 
 </script>
 </body>
 </html>
-
