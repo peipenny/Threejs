@@ -41,8 +41,10 @@ var pickables = [];
 var base, bases = [];
 var myLine = null;
 
+//var a = new THREE.Vector3();
 var p = [];
-var steps,numStep,moveTo;
+
+var steps,numStep,moveTo,theta2;
 var v,dq,front,now,next,ds;
 var isWalking;
 
@@ -279,7 +281,7 @@ function rotatingInit(){
 	truck.rotation.y = theta1;   
 	
 	var p23 = p[next].clone().sub(p[now]); 		//下一個角度-現在的角度
-	var theta2 = Math.atan2(p23.x,p23.z);
+	theta2 = Math.atan2(p23.x,p23.z);
 	
 	dq = 0.05;					//轉的速度
 	
