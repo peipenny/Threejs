@@ -15,11 +15,8 @@
 <div id='heading'>
   <button id='click'> Stop </button>
 </div>
-
-
 	<script src="https://threejs.org/build/three.min.js"></script>
-	<script src="https://threejs.org/examples/js/controls/OrbitControls.js">
-	</script>
+	<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
 	<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
 	<script src="https://rawgit.com/mrdoob/three.js/master/examples/js/loaders/DDSLoader.js"></script>
 	<script src="https://raw.githack.com/mrdoob/three.js/dev/examples/js/loaders/MTLLoader.js"></script>
@@ -36,12 +33,9 @@ $('#click').click(function(){
 
 var renderer,camera,scene;
 var truck= new THREE.Object3D();;
-var raycaster;
-var pickables = [];
-var base, bases = [];
-var myLine = null;
+var pickables ,plane ;
+var pts ,lines , points ;
 
-//var a = new THREE.Vector3();
 var p = [];
 
 var steps,numStep,moveTo,theta2;
@@ -79,12 +73,9 @@ function readModel (modelName, targetSize=40) {
 		theObject.name = 'OBJ'
 		
 		truck.add(theObject);
-		
 		scene.add (truck);
-		
 		truck.position.set(0,0,0);
 	
-
     }, onProgress, onError);
 
   });
@@ -99,7 +90,7 @@ function unitize (object, targetSize) {
 	var size = new THREE.Vector3();
 	size.subVectors (box3.max, box3.min);
 	var center = new THREE.Vector3();
-	center.addVectors(box3.max, box3.min).multiplyScalar (3);	///更改位置
+	center.addVectors(box3.max, box3.min).multiplyScalar (0);	///更改位置
 	
 	console.log ('center: ' + center.x + ', '+center.y + ', '+center.z );
 	console.log ('size: ' + size.x + ', ' +  size.y + ', '+size.z );
@@ -138,12 +129,8 @@ function init(){
 	readModel('truck');
 	
 	///------light
-	/*
-	pointLight = new THREE.PointLight(0x404040,20,300);
-	pointLight.position.set(100,50,100);
-	scene.add(pointLight);
-	*/
-	 var ambient = new THREE.AmbientLight(0x444444);
+
+	var ambient = new THREE.AmbientLight(0x444444);
 	scene.add(ambient);
 	var directionalLight = new THREE.DirectionalLight(0xffffff);
 	directionalLight.position.set(0, 0, 1).normalize();
@@ -163,103 +150,99 @@ function init(){
 	scene.add(plane);
 	plane.rotation.x = -Math.PI / 2;
 	pickables = [plane];
-	plane.material.visible = false;
 
-	base = new THREE.Mesh(new THREE.CircleGeometry(10, 10), new THREE.MeshNormalMaterial());	//建立點
-
-	raycaster = new THREE.Raycaster();
 	document.addEventListener('pointerdown', onDocumentMouseDown, false);
+  
+	pts = [];
+	lines = [];
+	points = [];
+
 	//---------
 
 }
+function makePoint (pos) {
+	var p = new THREE.Mesh (new THREE.CircleGeometry (5,20), 
+	new THREE.MeshBasicMaterial({color:'cyan'}));
+	p.rotation.x = -Math.PI/2;
+	p.position.copy (pos);
+	return p;
+}
 
-
-function makeLine(startPoint) {
-	const MAX_LINE_POINTS = 100;
-	  
+function makeLine (p1, p2) {
 	var geometry = new THREE.Geometry();
-		
-	for (var i = 0; i < MAX_LINE_POINTS; i++) {
-		geometry.vertices.push(startPoint.clone());
-	}
-
-	myLine =  new THREE.Line(geometry,  new THREE.LineBasicMaterial( { color: 0xffff00 } ));
-
-	return myLine;
+	geometry.vertices.push (p1.clone(), p2.clone());
+  	var line = new THREE.Line(geometry, new THREE.LineBasicMaterial({
+    color: 'yellow'
+	}));
+	return line;	
 }
-
-function addPoint(myPoint) {
-	myLine.geometry.vertices.shift();
-	myLine.geometry.vertices.push (myPoint);
-	myLine.geometry.verticesNeedUpdate = true;
-}
-
-var toggle = 1; 
-var start = 1 ;
 
 function onDocumentMouseDown(event) {
 
-	var mouse = new THREE.Vector2();
-	var btnNum = event.button;	//確認是左鍵還是右鍵
-	if(btnNum==0&&toggle==1){
-			
-		  event.preventDefault();
-		  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-		  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-		
-		  // find intersections
-		  raycaster.setFromCamera(mouse, camera);
-		  var intersects = raycaster.intersectObjects(pickables);
+	  // PICKING DETAILS: 
+	  // convert mouse.xy = [-1,1]^2 (NDC)
+	  // unproject (mouse.xy, 1) to a point on the far plane (in world coordinate)
+	  // set raycaster (origin, direction)
+	  // find intersection objects, (closest first) 
+	  // each record as
+	  // [ { distance, point, face, faceIndex, object }, ... ]
 
-			var a = intersects[0].point;
+	  if (event.button === 2) {  
+		// add line connecting last to first point
+		let line = makeLine(pts[0], pts[pts.length-1]);
+		lines.push (line);
+		scene.add (line);
+		
+		// remove picking plane
+		pickables = [];
+		plane.material.visible = false;
+			front = p.length - 1; 
+			now = 0;	
+			next = 1;
+			isWalking = true;
+			walkingInit();
+		
+	  }
+	  
+	  event.preventDefault();
+	  let mouse = new THREE.Vector2();
+	  let raycaster = new THREE.Raycaster();
+	  
+	  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+	  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+	  // find intersections
+	  raycaster.setFromCamera(mouse, camera);
+	  var intersects = raycaster.intersectObjects(pickables);
+	  
+	  var a = intersects[0].point;
 			p.push(a);
-			if(start==1){
-				p.push(a);
-				start = 0;
-			}
-		  if (intersects.length > 0) {
-				let bb = base.clone();
-				bb.position.copy (intersects[0].point);
-				bb.rotation.x = -Math.PI/2;
-				scene.add (bb);
-					bases.push (bb);
-				if (myLine === null) {
-					myLine = makeLine (bb.position);
-				  scene.add (myLine);
-				} else {
-					addPoint(bb.position);
-				}
-			}
-	}
-	if(btnNum==2){
-		document.addEventListener('contextmenu', event => event.preventDefault());
-		toggle = 0;
-		truck.position.copy(p[0]);
-		//// init
-		
-		front = p.length - 1; 
-		now = 0;	
-		next = 1;
-		isWalking = true;
-		walkingInit();
-		
+	  if (intersects.length > 0) {
+		pts.push (intersects[0].point.clone() );
+		let point = makePoint (pts[pts.length-1]); 
+		points.push (point);
+		scene.add (point);
+		if (pts.length > 1) {
+			let line = makeLine (pts[pts.length-1], pts[pts.length-2]);
+			lines.push (line);
+			scene.add (line);
+		}
 	}
 }
 
 function walkingInit(){
-	v = p[next].clone().sub(p[now]);   //v = p[next]-p[now]
-	ds = 0.51;							//走的速度
-	steps = Math.floor(v.length()/ds);	//	floor為四捨五入 
+	v = p[next].clone().sub(p[now]);   
+	ds = 0.51;							
+	steps = Math.floor(v.length()/ds);	
 	moveTo = p[now].clone();
 	stepNum = 0 ;
 }
 
 
 function walking(){
-	moveTo = moveTo.clone().add(v.clone().setLength(ds)); //將此向量設置為與該向量具有相同方向但長度為l的向量。
+	moveTo = moveTo.clone().add(v.clone().setLength(ds)); 
 	stepNum++;
-	if(stepNum > steps){		//如果走的步數已經超過應該走的步數
-
+	if(stepNum > steps){		
 		truck.position.copy(p[next]);
 		front++;
 		now++;
@@ -275,21 +258,21 @@ function walking(){
 
 function rotatingInit(){
 	
-	var p12 = p[now].clone().sub(p[front]);	 	//現在的角度-之前的角度
+	var p12 = p[now].clone().sub(p[front]);	 
 	var theta1 = Math.atan2(p12.x,p12.z);
-	//truck.position.copy(p[now]);
+
 	truck.rotation.y = theta1;   
 	
-	var p23 = p[next].clone().sub(p[now]); 		//下一個角度-現在的角度
+	var p23 = p[next].clone().sub(p[now]); 		
 	theta2 = Math.atan2(p23.x,p23.z);
 	
-	dq = 0.05;					//轉的速度
+	dq = 0.05;					
 	
-	if (theta2 < 0) { 		// 異號
+	if (theta2 < 0) { 		
 		theta2 += Math.PI * 2;
 	 }
 	  
-	if (theta1 < 0) { // 異號
+	if (theta1 < 0) { 
 		theta1 += Math.PI * 2;
 	}
 	  
@@ -312,19 +295,18 @@ function rotatingInit(){
 		}
 	 }
 	 
-	//debugger 
 	numStep = 0;
-	moveTo = theta1 ; // theta1
+	moveTo = theta1 ; 
 }
 
 function rotating(){
 	if(numStep > steps){
-		truck.rotation.y = theta2; //theta2
+		truck.rotation.y = theta2; 
 		walkingInit();
 		isWalking=true;
 	}
 	else{
-		truck.rotation.y = moveTo; //moveTo
+		truck.rotation.y = moveTo; 
 		moveTo +=dq;
 		++numStep;
 	}
