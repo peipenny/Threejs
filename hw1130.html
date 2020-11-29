@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+</style>
+</head>
+<body> 
+
+
+<script src="https://threejs.org/build/three.min.js"></script>
+<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+
+<script>
+
+var renderer,camera,scene,controls;;
+
+var uvOffsetArray = [];
+var baseS = 0, baseT = 0;
+var counter = 0;
+var sprite,sprite2;
+
+init();
+animate();
+
+function setUpOffsetArray() {
+	var rowCount = 4; // 4x8 sprites
+	var colCount = 8;
+	for (var i = 0; i < rowCount; i++) {
+		var row = [];
+		for (var j = 0; j < colCount; j++)
+		row.push(new THREE.Vector2(j * 0.25, - 2 * i));
+	uvOffsetArray.push(row);
+	}
+}
+
+function buildSprite(texMat) {
+
+	var geometry = new THREE.Geometry();
+	geometry.vertices.push(
+	new THREE.Vector3(-12, -12, 0),
+	new THREE.Vector3(12, -12, 0),
+	new THREE.Vector3(12, 12, 0),
+	new THREE.Vector3(-12, 12, 0)
+	);		//大小縮放
+	
+	var face;
+	face = new THREE.Face3(0, 1, 2);
+	geometry.faces.push(face);
+	face = new THREE.Face3(0, 2, 3);
+	geometry.faces.push(face);
+	
+	// upper left corner
+	var uv0 = new THREE.Vector2(0,0.6);	
+	var uv1 = new THREE.Vector2(0.23,0.6);	//調整動畫畫面
+	var uv2 = new THREE.Vector2(0.23,1.0);
+	var uv3 = new THREE.Vector2(0.0,1.0);
+	  
+	geometry.faceVertexUvs[0].push([uv0, uv1, uv2]);
+
+	geometry.computeBoundingSphere();
+	geometry.faceVertexUvs[0].push([uv0, uv2, uv3]);
+	geometry.computeFaceNormals();
+	geometry.computeVertexNormals();
+
+	sprite = new THREE.Mesh(geometry, texMat);
+	
+	var geometry2 = geometry.clone();
+	geometry2.vertices=[
+		new THREE.Vector3(-6, -6, 0),
+		new THREE.Vector3(6, -6, 0),
+		new THREE.Vector3(6, 6, 0),
+		new THREE.Vector3(-6, 6, 0)
+	];
+	sprite2 = new THREE.Mesh(geometry2, texMat);
+	
+	scene.add(sprite,sprite2);
+
+	sprite.position.set(-24,12,0);
+	sprite2.position.set(28,40,0);
+	sprite2.rotation.y=Math.PI;
+
+	
+}
+
+function init(){
+	renderer = new THREE.WebGLRenderer({antialias:true});
+	renderer.setSize (window.innerWidth,window.innerHeight);
+	renderer.setClearColor(0x000000);
+	document.body.appendChild(renderer.domElement);
+		
+	camera = new THREE.PerspectiveCamera(50,window.innerWidth/window.innerHeight,1,1000);
+	camera.position.z = 50; // (0,0,50)
+
+	controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+	scene = new THREE.Scene();
+	var grid = new THREE.GridHelper(100,10,'red','white');
+	scene.add(grid);
+		
+	////////////////////////////// sprite	
+	
+    setUpOffsetArray();
+
+	 // instantiate a loader
+	 var loader = new THREE.TextureLoader();
+
+	  // load a resource
+	 loader.load(
+	 'https://i.imgur.com/uEitOW3.png',
+	 // Function when resource is loaded
+	function(texture) {
+		 // Plane with default texture coordinates [0,1]x[0,1]
+		var texMat = new THREE.MeshBasicMaterial({
+		 map: texture,
+		 transparent: true, // cutout texture: set transparent: true
+		 side: THREE.DoubleSide
+		 });
+		 texture.wrapS = THREE.RepeatWrapping;
+		 texture.wrapT = THREE.RepeatWrapping;
+		 buildSprite(texMat);
+		},
+		// Function called when download progresses
+		function(xhr) {
+		console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+		},
+		// Function called when download errors
+		function(xhr) {
+		  console.log('An error happened');
+		}
+	 );
+  
+  ////////////////////////////////// trees
+  
+  	gridXZ = new THREE.GridHelper (400,40,'red','white')
+	scene.add (gridXZ)
+  
+	loader = new THREE.TextureLoader();
+	loader.crossOrigin = '';
+	texture = loader.load('https://i.imgur.com/m4m6K9U.png');
+
+	var texMat = new THREE.MeshBasicMaterial({
+	map: texture,
+    //transparent: true
+    alphaTest: 0.5
+	});
+
+	tree = new THREE.Mesh(new THREE.PlaneGeometry(40, 80), texMat);
+	trees = []
+	for (let i = 0; i < 15; i++) {
+		let tt = tree.clone();
+		tt.position.set ((-1+Math.random()*2)*180, 39, (-1+Math.random()*2)*180);
+		trees.push (tt);
+		scene.add (tt);
+	}
+	
+	frame();
+	////////////////////////////// person running
+		
+}
+
+function onWindowResize() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function spriteAnimate() {
+	console.log (uvOffsetArray[baseS][baseT]);
+	  
+	sprite.material.map.offset.copy (uvOffsetArray[baseS][baseT]);  
+	baseT = (baseT + 1) % 8;
+	if (baseT === 0) {
+		baseS = (baseS + 1) % 4;
+	}
+	if(sprite.position.x!=24)sprite.position.x+=2;
+	else{
+		sprite.position.x = -24;
+	}
+	if(sprite2.position.x!=-28)sprite2.position.x-=2;
+	else{
+		sprite2.position.x = 28;
+	}
+	
+}
+
+function frame(){
+	let loader = new THREE.TextureLoader();
+	let texture = loader.load ("https://i.imgur.com/JpMRKyD.png");
+	const material = new THREE.MeshBasicMaterial( { map: texture } );
+	var texMat = new THREE.MeshBasicMaterial({
+		map: texture,
+		alphaTest: 0.5,
+		side:THREE.DoubleSid
+	});
+	var frame = new THREE.Mesh(new THREE.PlaneGeometry(90,90), texMat);
+	scene.add(frame);
+	frame.position.set(0,27,0);
+	frame.rotation.z= Math.PI/2;
+}
+
+function animate(){
+	counter++;
+	controls.update();
+
+	if (counter % 14 === 0)
+    spriteAnimate();
+	trees.forEach (function(t) {t.lookAt (camera.position)});
+
+	renderer.render(scene,camera);
+	requestAnimationFrame(animate);
+}
+</script>
+</body>
+</html>
