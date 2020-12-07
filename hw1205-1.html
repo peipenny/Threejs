@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+#info {
+  position: absolute;
+  top: 50px;
+  width: 100%;
+  padding: 10px;
+  text-align: center;
+  color: #ff0000
+}
+</style>
+</head>
+<body> 
+
+<div id='info'>BLINKING
+<br>
+<br>
+<button id='start'>Start</button>
+<p id='msg'></p>
+</div>
+
+
+<script src="https://threejs.org/build/three.min.js"></script>
+<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+
+<script>
+
+
+$('#start').click ( function() {
+	counter = 5;
+	set = 5;
+	// init of sprite
+	 baseS = 0, baseT = 0;
+	 counter2 = 49;
+	countDown();
+});
+
+
+var renderer,camera,scene,controls;
+var plane, oldColor;
+var lit = true;
+var toggle = false;
+
+var uvOffsetArray = [];
+var baseS = 0, baseT = 0;
+var counter2 = 49;
+var sprite;
+var set;
+
+init();
+animate();
+
+function setUpOffsetArray() {
+	var rowCount = 1; 		// 4x8 sprites
+	var colCount = 5;
+	for (var i = 0; i < rowCount; i++) {
+		var row = [];
+		for (var j = 0; j < colCount; j++)
+		row.push(new THREE.Vector2(j * 0.2, - 2 * i));	//調整移動的間隔
+		uvOffsetArray.push(row);
+	}
+}
+
+function buildSprite(texMat) {
+
+	var geometry = new THREE.Geometry();
+	geometry.vertices.push(
+	new THREE.Vector3(-5, -5, 0),
+	new THREE.Vector3(5, -5, 0),
+	new THREE.Vector3(5, 5, 0),
+	new THREE.Vector3(-5, 5, 0)
+	);		//大小縮放
+	
+	var face;
+	face = new THREE.Face3(0, 1, 2);
+	geometry.faces.push(face);
+	face = new THREE.Face3(0, 2, 3);
+	geometry.faces.push(face);
+	
+	// upper left corner
+	var uv0 = new THREE.Vector2(0.0,1.0);	
+	var uv1 = new THREE.Vector2(0.21,1.0);	//調整圖片
+	var uv2 = new THREE.Vector2(0.21,2.0);
+	var uv3 = new THREE.Vector2(0.0,2.0);
+	  
+	geometry.faceVertexUvs[0].push([uv0, uv1, uv2]);
+
+	geometry.computeBoundingSphere();
+	geometry.faceVertexUvs[0].push([uv0, uv2, uv3]);
+	geometry.computeFaceNormals();
+	geometry.computeVertexNormals();
+
+	sprite = new THREE.Mesh(geometry, texMat);
+	
+	scene.add(sprite);
+	
+	sprite.position.set(-1,20,0);
+
+
+}
+
+function spriteAnimate() {
+	if(set>=0){
+		console.log (uvOffsetArray[baseS][baseT]);
+		  
+		sprite.material.map.offset.copy (uvOffsetArray[baseS][baseT]);  
+		baseT = (baseT + 1) % 5;
+		if (baseT === 0) {
+			baseS = (baseS + 1) % 1;
+		}
+		set--;
+
+	}
+	if(set==-1){
+		toggle = !toggle;
+		count = 2000;
+		blinker();
+	}
+}
+
+
+function blinker() {
+	if (lit === true)
+  	plane.material.color.setHSL (oldColor.h, oldColor.s, 1.0);	//r g b
+	else
+  	plane.material.color.setHSL (oldColor.h, oldColor.s, oldColor.l);  
+	lit = ! lit;
+	
+	count-=200;
+
+	if(count==0) toggle = false;
+  	if(toggle)setTimeout (blinker, 200);
+}
+
+
+function init(){
+	renderer = new THREE.WebGLRenderer({antialias:true});
+	renderer.setSize (window.innerWidth,window.innerHeight);
+	renderer.setClearColor(0xcccccc);
+	
+	document.body.appendChild(renderer.domElement);
+	
+	camera = new THREE.PerspectiveCamera(50,window.innerWidth/window.innerHeight,1,1000);
+	camera.position.z = 50; // (0,0,50)
+
+	controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+	scene = new THREE.Scene();
+	//var grid = new THREE.GridHelper(100,10,'red','white');
+	//scene.add(grid);
+	
+	
+	///////////////////////// blinker
+	
+	plane = new THREE.Mesh (new THREE.PlaneGeometry (10,10), new THREE.MeshBasicMaterial({color:0x2e4be2}));
+	scene.add (plane);
+	
+	//empty constructor - will default white
+    oldColor = new THREE.Color(); 
+    plane.material.color.getHSL (oldColor); 
+	
+	
+	////////////////////////////// sprite	
+    setUpOffsetArray();
+	var loader = new THREE.TextureLoader();
+
+	 // load a resource
+	 loader.load(
+	 'https://i.imgur.com/JYX6J2J.png',
+	function(texture) {
+		var texMat = new THREE.MeshBasicMaterial({
+		 map: texture,
+		 transparent: true, // cutout texture: set transparent: true
+		 side: THREE.DoubleSide
+		 });
+		 texture.wrapS = THREE.RepeatWrapping;
+		 texture.wrapT = THREE.RepeatWrapping;
+		 buildSprite(texMat);
+		},
+		// Function called when download progresses
+		function(xhr) {
+		console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+		},
+		// Function called when download errors
+		function(xhr) {
+		  console.log('An error happened');
+		}
+	 );
+	 
+	 
+}
+
+function animate(){
+
+	counter2++;
+	controls.update();
+	if (counter2 % 50=== 0&&set>0)	//速度
+	setTimeout (spriteAnimate, 1000);
+	
+	renderer.render(scene,camera);
+	requestAnimationFrame(animate);
+}
+</script>
+</body>
+</html>
