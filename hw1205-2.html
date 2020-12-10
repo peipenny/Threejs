@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+#info {
+  position: absolute;
+  top: 50px;
+  width: 100%;
+  padding: 10px;
+  text-align: center;
+  color: #ff0000
+}
+</style>
+</head>
+<body> 
+<div id='info'> WHICH PLANE
+
+<script src="https://threejs.org/build/three.min.js"></script>
+<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+
+<script>
+
+var renderer,camera,scene;
+
+var meshMaterial;
+var faces;
+
+init();
+animate();
+
+function init(){
+	renderer = new THREE.WebGLRenderer({antialias:true});
+	renderer.setSize (window.innerWidth,window.innerHeight);
+	renderer.setClearColor(0x000000);
+	document.body.appendChild(renderer.domElement);
+	
+	camera = new THREE.PerspectiveCamera(50,window.innerWidth/window.innerHeight,1,1000);
+    camera.position.set (0, 50, 100);
+
+	var controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+	scene = new THREE.Scene();
+
+	/////////////////////////////
+
+	object();
+
+}
+
+function object(){
+
+	var dice = new THREE.Group();
+    scene.add (dice);
+        
+    let px = new THREE.Mesh (new THREE.PlaneGeometry (30,30), new THREE.MeshBasicMaterial({color:0x2194ce, transparent:true, opacity:0.4}));
+    dice.add (px);
+    px.rotation.y = Math.PI/2;
+    px.position.set (15,0,0);
+    
+    let py = new THREE.Mesh (new THREE.PlaneGeometry (30,30), new THREE.MeshBasicMaterial({color:0x2c964e, transparent:true, opacity:0.4}));
+    dice.add (py);
+    py.rotation.x = -Math.PI/2;
+    py.position.set (0, 15,0);
+    
+    let pz = new THREE.Mesh (new THREE.PlaneGeometry (30,30), new THREE.MeshBasicMaterial({color:0xd3851d, transparent:true, opacity:0.4}));
+    dice.add (pz);
+    pz.position.set (0, 0, 15);
+	
+	///add
+	let nx = new THREE.Mesh (new THREE.PlaneGeometry (30,30), new THREE.MeshBasicMaterial({color:0x96382c, transparent:true, opacity:0.4, side: THREE.DoubleSide}));
+    dice.add (nx);
+    nx.rotation.y = Math.PI/2;
+    nx.position.set (-15,0,0);
+
+    let ny = new THREE.Mesh (new THREE.PlaneGeometry (30,30), new THREE.MeshBasicMaterial({color:0xadc141, transparent:true, opacity:0.4, side: THREE.DoubleSide}));
+    dice.add (ny);
+    ny.rotation.x = -Math.PI/2;
+    ny.position.set (0, -15,0);
+	
+	
+    let nz = new THREE.Mesh (new THREE.PlaneGeometry (30,30), new THREE.MeshBasicMaterial({color:0xa121ce, transparent:true, opacity:0.4, side: THREE.DoubleSide}));
+    dice.add (nz);
+    nz.position.set (0, 0, -15);
+    
+    faces = {'px': px, 'py':py, 'pz':pz , 'nx':nx , 'ny':ny , 'nz':nz};
+	
+}
+
+
+function searchFace () {
+
+	var maxDot = -1;
+	
+	var normals = {px: new THREE.Vector3(1,0,0), py: new THREE.Vector3(0,1,0),pz: new THREE.Vector3(0,0,1),
+				   nx: new THREE.Vector3(-1,0,0), ny: new THREE.Vector3(0,-1,0), nz: new THREE.Vector3(0,0,-1)};
+	var centers = {px: new THREE.Vector3(15,0,0), py: new THREE.Vector3(0,15,0), pz: new THREE.Vector3(0,0,15),
+				   nx: new THREE.Vector3(-15,0,0), ny: new THREE.Vector3(0,-15,0), nz: new THREE.Vector3(0,0,-15)};
+  
+	let dd, point;
+	
+	point = camera.position.clone().sub (centers['px']).normalize();
+	
+	if ((dd = normals['px'].dot (point)) > maxDot) {
+		maxDot = dd;
+		which = 'px';
+	 }
+
+	point = camera.position.clone().sub (centers['py']).normalize();
+	
+	if ((dd = normals['py'].dot (point)) > maxDot) {
+		maxDot = dd;
+		which = 'py';
+	}
+	point = camera.position.clone().sub (centers['pz']).normalize();
+	
+	if ((dd = normals['pz'].dot (point)) > maxDot) {
+		maxDot = dd;
+		which = 'pz';
+	}
+	
+	point = camera.position.clone().sub (centers['nx']).normalize();
+	
+	if ((dd = normals['nx'].dot (point)) > maxDot) {
+		maxDot = dd;
+		which = 'nx';
+	 }
+
+	point = camera.position.clone().sub (centers['ny']).normalize();
+	
+	if ((dd = normals['ny'].dot (point)) > maxDot) {
+		maxDot = dd;
+		which = 'ny';
+	}
+	point = camera.position.clone().sub (centers['nz']).normalize();
+	
+	if ((dd = normals['nz'].dot (point)) > maxDot) {
+		maxDot = dd;
+		which = 'nz';
+	}
+	
+	return which;
+	
+}
+
+function setAllFacesTransparent () {
+   faces['px'].material.transparent = true;
+   faces['py'].material.transparent = true;
+   faces['pz'].material.transparent = true;
+   faces['nx'].material.transparent = true;
+   faces['ny'].material.transparent = true;
+   faces['nz'].material.transparent = true;
+
+}
+
+function animate(){
+	setAllFacesTransparent();
+	// go through all faces, determine which one facing camera
+	let which = searchFace();
+	faces[which].material.transparent = false;
+	renderer.render(scene,camera);
+	requestAnimationFrame(animate);
+}
+</script>
+</body>
+</html>

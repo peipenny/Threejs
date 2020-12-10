@@ -30,12 +30,10 @@
 
 
 $('#start').click ( function() {
-	counter = 5;
 	set = 5;
 	// init of sprite
 	 baseS = 0, baseT = 0;
-	 counter2 = 49;
-	countDown();
+	setTimeout (spriteAnimate, 0);
 });
 
 
@@ -46,7 +44,6 @@ var toggle = false;
 
 var uvOffsetArray = [];
 var baseS = 0, baseT = 0;
-var counter2 = 49;
 var sprite;
 var set;
 
@@ -112,7 +109,7 @@ function spriteAnimate() {
 			baseS = (baseS + 1) % 1;
 		}
 		set--;
-
+		setTimeout (spriteAnimate, 1000);
 	}
 	if(set==-1){
 		toggle = !toggle;
@@ -130,7 +127,7 @@ function blinker() {
 	lit = ! lit;
 	
 	count-=200;
-
+	console.log(count);
 	if(count==0) toggle = false;
   	if(toggle)setTimeout (blinker, 200);
 }
@@ -190,16 +187,9 @@ function init(){
 		}
 	 );
 	 
-	 
 }
 
-function animate(){
-
-	counter2++;
-	controls.update();
-	if (counter2 % 50=== 0&&set>0)	//速度
-	setTimeout (spriteAnimate, 1000);
-	
+function animate(){	
 	renderer.render(scene,camera);
 	requestAnimationFrame(animate);
 }
