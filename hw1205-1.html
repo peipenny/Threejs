@@ -33,6 +33,7 @@ $('#start').click ( function() {
 	set = 5;
 	// init of sprite
 	 baseS = 0, baseT = 0;
+	 count = 2000;
 	setTimeout (spriteAnimate, 0);
 });
 
@@ -96,7 +97,6 @@ function buildSprite(texMat) {
 	
 	sprite.position.set(-1,20,0);
 
-
 }
 
 function spriteAnimate() {
@@ -112,24 +112,32 @@ function spriteAnimate() {
 		setTimeout (spriteAnimate, 1000);
 	}
 	if(set==-1){
-		toggle = !toggle;
-		count = 2000;
-		blinker();
+		//toggle = !toggle;
+		setTimeout (blinker, 0);			
 	}
 }
 
 
 function blinker() {
-	if (lit === true)
-  	plane.material.color.setHSL (oldColor.h, oldColor.s, 1.0);	//r g b
-	else
-  	plane.material.color.setHSL (oldColor.h, oldColor.s, oldColor.l);  
-	lit = ! lit;
-	
-	count-=200;
-	console.log(count);
-	if(count==0) toggle = false;
-  	if(toggle)setTimeout (blinker, 200);
+	if(count>0){
+		if (lit === true)
+		plane.material.color.setHSL (oldColor.h, oldColor.s, 1.0);	//r g b
+		else
+		plane.material.color.setHSL (oldColor.h, oldColor.s, oldColor.l);
+		
+		console.log(lit);
+		lit = ! lit;
+		count-=200;
+		console.log(count);
+		setTimeout (blinker, 200);
+	}
+	else if(count===0) {
+		console.log(count);
+			//toggle = false;
+		return;
+	}
+
+
 }
 
 
