@@ -21,10 +21,15 @@
 
 <script>
 
-var renderer,camera,scene;
+var renderer,camera,scene,controls;
 
 var meshMaterial;
 var faces;
+var set = 5 ;
+
+var uvOffsetArray = [];
+var baseS = 0, baseT = 0;
+var sprite;
 
 init();
 animate();
@@ -45,6 +50,37 @@ function init(){
 	/////////////////////////////
 
 	object();
+	
+	////////////////////////////// sprite	
+    setUpOffsetArray();
+	var loader = new THREE.TextureLoader();
+
+	 // load a resource
+	 loader.load(
+	 'https://i.imgur.com/JYX6J2J.png',
+	function(texture) {
+		var texMat = new THREE.MeshBasicMaterial({
+		 map: texture,
+		 transparent: true, // cutout texture: set transparent: true
+		 side: THREE.DoubleSide,
+		 polygonOffset: true,
+		polygonOffsetFactor: -1.0,
+		polygonOffsetUnits: -4.0
+		 
+		 });
+		 texture.wrapS = THREE.RepeatWrapping;
+		 texture.wrapT = THREE.RepeatWrapping;
+		 buildSprite(texMat);
+		},
+		// Function called when download progresses
+		function(xhr) {
+		console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+		},
+		// Function called when download errors
+		function(xhr) {
+		  console.log('An error happened');
+		}
+	 );
 
 }
 
@@ -138,7 +174,6 @@ function searchFace () {
 		maxDot = dd;
 		which = 'nz';
 	}
-	
 	return which;
 	
 }
@@ -153,14 +188,90 @@ function setAllFacesTransparent () {
 
 }
 
+
+///////////// sprite
+
+function setUpOffsetArray() {
+	var rowCount = 1; 		// 4x8 sprites
+	var colCount = 5;
+	for (var i = 0; i < rowCount; i++) {
+		var row = [];
+		for (var j = 0; j < colCount; j++)
+		row.push(new THREE.Vector2(j * 0.2, - 2 * i));	//調整移動的間隔
+		uvOffsetArray.push(row);
+	}
+}
+
+function buildSprite(texMat) {
+
+	var geometry = new THREE.Geometry();
+	geometry.vertices.push(
+	new THREE.Vector3(-10, -10, 0),
+	new THREE.Vector3(10, -10, 0),
+	new THREE.Vector3(10, 10, 0),
+	new THREE.Vector3(-10, 10, 0)
+	);		//大小縮放
+	
+	var face;
+	face = new THREE.Face3(0, 1, 2);
+	geometry.faces.push(face);
+	face = new THREE.Face3(0, 2, 3);
+	geometry.faces.push(face);
+	
+	// upper left corner
+	var uv0 = new THREE.Vector2(0.0,1.0);	
+	var uv1 = new THREE.Vector2(0.21,1.0);	//調整圖片
+	var uv2 = new THREE.Vector2(0.21,2.0);
+	var uv3 = new THREE.Vector2(0.0,2.0);
+	  
+	geometry.faceVertexUvs[0].push([uv0, uv1, uv2]);
+
+	geometry.computeBoundingSphere();
+	geometry.faceVertexUvs[0].push([uv0, uv2, uv3]);
+	geometry.computeFaceNormals();
+	geometry.computeVertexNormals();
+
+	sprite = new THREE.Mesh(geometry, texMat);
+	
+	scene.add(sprite);
+	sprite.rotation.y = Math.PI*1.5;
+	sprite.position.set(-15,0,0);
+	spriteAnimate();
+	
+}
+function spriteAnimate() {
+		console.log (uvOffsetArray[baseS][baseT]);
+		  
+		sprite.material.map.offset.copy (uvOffsetArray[baseS][baseT]);  
+		baseT = (baseT + 1) % 5;
+		if (baseT === 0) {
+			baseS = (baseS + 1) % 1;
+		}
+		setTimeout (spriteAnimate, 1000);	
+}
+
+
 function animate(){
+	
 	setAllFacesTransparent();
 	// go through all faces, determine which one facing camera
 	let which = searchFace();
 	faces[which].material.transparent = false;
+	if(sprite){
+		sprite.position.copy(faces[which].position);
+		sprite.rotation.copy(faces[which].rotation);
+		if(which === 'nx') 
+			sprite.rotation.y = -Math.PI/2;
+		else if(which === 'ny'){
+			sprite.rotation.x = Math.PI/2;
+		}
+		else if(which === 'nz')
+			sprite.rotation.y = Math.PI;
+	}
 	renderer.render(scene,camera);
 	requestAnimationFrame(animate);
 }
+
 </script>
 </body>
 </html>
