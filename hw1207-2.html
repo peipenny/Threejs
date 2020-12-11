@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+#info {
+  position: absolute;
+  top: 50px;
+  width: 100%;
+  padding: 10px;
+  text-align: center;
+  color: #ff0000
+}
+</style>
+</head>
+<body> 
+<div id='info'> WHICH PLANE
+
+<script src="https://threejs.org/build/three.min.js"></script>
+<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+
+<script>
+
+var renderer,camera,scene,controls;
+
+var meshMaterial;
+var faces;
+var set = 5 ;
+
+var uvOffsetArray = [];
+var baseS = 0, baseT = 0;
+var sprite;
+
+init();
+animate();
+
+function init(){
+	renderer = new THREE.WebGLRenderer({antialias:true});
+	renderer.setSize (window.innerWidth,window.innerHeight);
+	renderer.setClearColor(0x000000);
+	document.body.appendChild(renderer.domElement);
+	
+	camera = new THREE.PerspectiveCamera(50,window.innerWidth/window.innerHeight,1,1000);
+    camera.position.set (0, 50, 100);
+
+	var controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+	scene = new THREE.Scene();
+
+	/////////////////////////////
+
+	object();
+	
+	////////////////////////////// sprite	
+    setUpOffsetArray();
+	var loader = new THREE.TextureLoader();
+
+	 // load a resource
+	 loader.load(
+	 'https://i.imgur.com/JYX6J2J.png',
+	function(texture) {
+		var texMat = new THREE.MeshBasicMaterial({
+		 map: texture,
+		 transparent: true, // cutout texture: set transparent: true
+		 side: THREE.DoubleSide,
+		 polygonOffset: true,
+		polygonOffsetFactor: -1.0,
+		polygonOffsetUnits: -4.0
+		 
+		 });
+		 texture.wrapS = THREE.RepeatWrapping;
+		 texture.wrapT = THREE.RepeatWrapping;
+		 buildSprite(texMat);
+		},
+		// Function called when download progresses
+		function(xhr) {
+		console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+		},
+		// Function called when download errors
+		function(xhr) {
+		  console.log('An error happened');
+		}
+	 );
+
+}
+
+function object(){
+
+	var dice = new THREE.Group();
+    scene.add (dice);
+        
+    let px = new THREE.Mesh (new THREE.PlaneGeometry (30,30), new THREE.MeshBasicMaterial({color:0x2194ce, transparent:true, opacity:0.4}));
+    dice.add (px);
+    px.rotation.y = Math.PI/2;
+    px.position.set (15,0,0);
+    
+    let py = new THREE.Mesh (new THREE.PlaneGeometry (30,30), new THREE.MeshBasicMaterial({color:0x2c964e, transparent:true, opacity:0.4}));
+    dice.add (py);
+    py.rotation.x = -Math.PI/2;
+    py.position.set (0, 15,0);
+    
+    let pz = new THREE.Mesh (new THREE.PlaneGeometry (30,30), new THREE.MeshBasicMaterial({color:0xd3851d, transparent:true, opacity:0.4}));
+    dice.add (pz);
+    pz.position.set (0, 0, 15);
+	
+	///add
+	let nx = new THREE.Mesh (new THREE.PlaneGeometry (30,30), new THREE.MeshBasicMaterial({color:0x96382c, transparent:true, opacity:0.4, side: THREE.DoubleSide}));
+    dice.add (nx);
+    nx.rotation.y = Math.PI/2;
+    nx.position.set (-15,0,0);
+
+    let ny = new THREE.Mesh (new THREE.PlaneGeometry (30,30), new THREE.MeshBasicMaterial({color:0xadc141, transparent:true, opacity:0.4, side: THREE.DoubleSide}));
+    dice.add (ny);
+    ny.rotation.x = -Math.PI/2;
+    ny.position.set (0, -15,0);
+	
+	
+    let nz = new THREE.Mesh (new THREE.PlaneGeometry (30,30), new THREE.MeshBasicMaterial({color:0xa121ce, transparent:true, opacity:0.4, side: THREE.DoubleSide}));
+    dice.add (nz);
+    nz.position.set (0, 0, -15);
+    
+    faces = {'px': px, 'py':py, 'pz':pz , 'nx':nx , 'ny':ny , 'nz':nz};
+	
+}
+
+
+function searchFace () {
+
+	var maxDot = -1;
+	
+	var normals = {px: new THREE.Vector3(1,0,0), py: new THREE.Vector3(0,1,0),pz: new THREE.Vector3(0,0,1),
+				   nx: new THREE.Vector3(-1,0,0), ny: new THREE.Vector3(0,-1,0), nz: new THREE.Vector3(0,0,-1)};
+	var centers = {px: new THREE.Vector3(15,0,0), py: new THREE.Vector3(0,15,0), pz: new THREE.Vector3(0,0,15),
+				   nx: new THREE.Vector3(-15,0,0), ny: new THREE.Vector3(0,-15,0), nz: new THREE.Vector3(0,0,-15)};
+  
+	let dd, point;
+	
+	point = camera.position.clone().sub (centers['px']).normalize();
+	
+	if ((dd = normals['px'].dot (point)) > maxDot) {
+		maxDot = dd;
+		which = 'px';
+	 }
+
+	point = camera.position.clone().sub (centers['py']).normalize();
+	
+	if ((dd = normals['py'].dot (point)) > maxDot) {
+		maxDot = dd;
+		which = 'py';
+	}
+	point = camera.position.clone().sub (centers['pz']).normalize();
+	
+	if ((dd = normals['pz'].dot (point)) > maxDot) {
+		maxDot = dd;
+		which = 'pz';
+	}
+	
+	point = camera.position.clone().sub (centers['nx']).normalize();
+	
+	if ((dd = normals['nx'].dot (point)) > maxDot) {
+		maxDot = dd;
+		which = 'nx';
+	 }
+
+	point = camera.position.clone().sub (centers['ny']).normalize();
+	
+	if ((dd = normals['ny'].dot (point)) > maxDot) {
+		maxDot = dd;
+		which = 'ny';
+	}
+	point = camera.position.clone().sub (centers['nz']).normalize();
+	
+	if ((dd = normals['nz'].dot (point)) > maxDot) {
+		maxDot = dd;
+		which = 'nz';
+	}
+	return which;
+	
+}
+
+function setAllFacesTransparent () {
+   faces['px'].material.transparent = true;
+   faces['py'].material.transparent = true;
+   faces['pz'].material.transparent = true;
+   faces['nx'].material.transparent = true;
+   faces['ny'].material.transparent = true;
+   faces['nz'].material.transparent = true;
+
+}
+
+
+///////////// sprite
+
+function setUpOffsetArray() {
+	var rowCount = 1; 		// 4x8 sprites
+	var colCount = 5;
+	for (var i = 0; i < rowCount; i++) {
+		var row = [];
+		for (var j = 0; j < colCount; j++)
+		row.push(new THREE.Vector2(j * 0.2, - 2 * i));	//調整移動的間隔
+		uvOffsetArray.push(row);
+	}
+}
+
+function buildSprite(texMat) {
+
+	var geometry = new THREE.Geometry();
+	geometry.vertices.push(
+	new THREE.Vector3(-10, -10, 0),
+	new THREE.Vector3(10, -10, 0),
+	new THREE.Vector3(10, 10, 0),
+	new THREE.Vector3(-10, 10, 0)
+	);		//大小縮放
+	
+	var face;
+	face = new THREE.Face3(0, 1, 2);
+	geometry.faces.push(face);
+	face = new THREE.Face3(0, 2, 3);
+	geometry.faces.push(face);
+	
+	// upper left corner
+	var uv0 = new THREE.Vector2(0.0,1.0);	
+	var uv1 = new THREE.Vector2(0.21,1.0);	//調整圖片
+	var uv2 = new THREE.Vector2(0.21,2.0);
+	var uv3 = new THREE.Vector2(0.0,2.0);
+	  
+	geometry.faceVertexUvs[0].push([uv0, uv1, uv2]);
+
+	geometry.computeBoundingSphere();
+	geometry.faceVertexUvs[0].push([uv0, uv2, uv3]);
+	geometry.computeFaceNormals();
+	geometry.computeVertexNormals();
+
+	sprite = new THREE.Mesh(geometry, texMat);
+	
+	scene.add(sprite);
+	sprite.rotation.y = Math.PI*1.5;
+	sprite.position.set(-15,0,0);
+	spriteAnimate();
+	
+}
+function spriteAnimate() {
+		console.log (uvOffsetArray[baseS][baseT]);
+		  
+		sprite.material.map.offset.copy (uvOffsetArray[baseS][baseT]);  
+		baseT = (baseT + 1) % 5;
+		if (baseT === 0) {
+			baseS = (baseS + 1) % 1;
+		}
+		setTimeout (spriteAnimate, 1000);	
+}
+
+
+function animate(){
+	
+	setAllFacesTransparent();
+	// go through all faces, determine which one facing camera
+	let which = searchFace();
+	faces[which].material.transparent = false;
+	if(sprite){
+		sprite.position.copy(faces[which].position);
+		sprite.rotation.copy(faces[which].rotation);
+		if(which === 'nx') 
+			sprite.rotation.y = -Math.PI/2;
+		else if(which === 'ny'){
+			sprite.rotation.x = Math.PI/2;
+		}
+		else if(which === 'nz')
+			sprite.rotation.y = Math.PI;
+	}
+	renderer.render(scene,camera);
+	requestAnimationFrame(animate);
+}
+
+</script>
+</body>
+</html>
