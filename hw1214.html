@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+</style>
+</head>
+<body> 
+
+<script src="https://threejs.org/build/three.min.js"></script>
+<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+
+<script src="https://threejs.org/examples/js/controls/FirstPersonControls.js"></script>
+
+<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+
+<script>
+
+var scene, camera, renderer;
+var controls;
+
+var gun,frontSight;
+
+var puck;
+
+var raycaster,missile=new THREE.Group();
+var mouse = new THREE.Vector2();
+var record = new THREE.Vector3();
+
+
+var shootDirection = new THREE.Vector3();
+
+init();
+animate();
+
+function init() {
+
+	renderer = new THREE.WebGLRenderer({antialias:true});
+	renderer.setSize (window.innerWidth,window.innerHeight);
+	renderer.setClearColor(0x000000);
+	document.body.appendChild(renderer.domElement);
+		
+	camera = new THREE.PerspectiveCamera(50,window.innerWidth/window.innerHeight,1,1000);
+	camera.position.set(0,10,50); // (0,0,50)
+
+	controls = new THREE.OrbitControls(camera, renderer.domElement);
+	//controls = new THREE.FirstPersonControls(camera, renderer.domElement );
+	
+	scene = new THREE.Scene();
+	var grid = new THREE.GridHelper(100,10,'red','white');
+	scene.add(grid);
+
+	gun();
+	frontSight();
+	///////////////////////////// shooting
+
+	raycaster = new THREE.Raycaster();
+	document.addEventListener('pointerdown', onDocumentMouseDown, false);
+	
+
+}
+
+function onDocumentMouseDown(event) {
+	event.preventDefault();
+	window.addEventListener('click', function(e){
+       if(e.button===0){
+			mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+			mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+			// find intersections
+			raycaster.setFromCamera(mouse, camera);
+			
+			buildMissile();
+			scene.add (missile); 
+			missile.position.set(gun.position.x+6,gun.position.y+6,gun.position.z+1);
+			console.log(missile);
+			shootDirection.copy(raycaster.ray.direction);
+       }
+   } );
+	
+}
+
+function buildMissile() {
+
+	var normalMat = new THREE.MeshNormalMaterial();
+	var body = new THREE.Mesh (new THREE.SphereGeometry(1.0), normalMat);
+	missile.add (body);
+	scene.add(missile);  
+	return missile;
+}
+
+function calculate(){
+	missile.position.x += shootDirection.x/3;
+	missile.position.y += shootDirection.y/3;
+	missile.position.z += shootDirection.z/3;
+}
+
+function gun(){
+	let loader = new THREE.TextureLoader();
+	let texture = loader.load ('https://i.imgur.com/iapII7o.png');
+	//const material = new THREE.MeshBasicMaterial( { map: texture } );
+	loader.crossOrigin = ' ';
+	var texMat = new THREE.MeshBasicMaterial({
+		map: texture,
+		alphaTest: 0.5,
+		side:THREE.DoubleSide
+	});
+	gun = new THREE.Mesh(new THREE.PlaneGeometry(15,15,2,2), texMat);
+	scene.add(gun);
+	gun.rotation.y = Math.PI;
+	gun.rotation.z= -Math.PI/30;
+}
+
+function frontSight(){
+	let loader = new THREE.TextureLoader();
+	let texture = loader.load ('https://i.imgur.com/f6WjQOP.png');
+	loader.crossOrigin = ' ';
+	var texMat = new THREE.MeshBasicMaterial({
+		map: texture,
+		alphaTest: 0.5,
+		side:THREE.DoubleSide
+	});
+	frontSight = new THREE.Mesh(new THREE.PlaneGeometry(10,10), texMat);
+	scene.add(frontSight);
+	frontSight.rotation.y = 90;
+
+}
+
+
+function animate() {
+	gun.position.set(camera.position.x+10,camera.position.y-10,camera.position.z-10);
+	camera.lookAt(gun.position.x+40,gun.position.y-3,gun.position.z-10);
+
+	frontSight.position.set(gun.position.x+40,gun.position.y,gun.position.z-10);
+	calculate();
+
+    renderer.render(scene, camera);
+	requestAnimationFrame(animate);
+}
+
+</script>
+</body>
+</html>
